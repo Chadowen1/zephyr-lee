@@ -1,0 +1,24 @@
+{
+  "development": {
+    "username": "root",
+    "password": "kaskroutHARGMA213676",
+    "database": "zephyr_db",
+    "host": "localhost",
+    "port": 3306,
+    "dialect": "mysql"
+  },
+  "test": {
+    "username": "root",
+    "password": "kaskroutHARGMA213676*",
+    "database": "zephyr_db_test",
+    "host": "localhost",
+    "dialect": "mysql"
+  },
+  "production": {
+    "username": "root",
+    "password": "kaskroutHARGMA213676*",
+    "database": "zephyr_db_prod",
+    "host": "localhost",
+    "dialect": "mysql"
+  }
+}
