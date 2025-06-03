@@ -4,6 +4,7 @@ import { FiSearch, FiMapPin, FiHome, FiHeart, FiFilter, FiArrowLeft, FiCalendar,
 import Image from 'next/image';
 import Head from 'next/head';
 import dynamic from 'next/dynamic';
+import { createUserQuery } from '@/services/userQueriesService';
 
 // Dynamically import the Map component to avoid SSR issues with Leaflet
 const MapWithNoSSR = dynamic(() => import('../PropertyMap'), {
@@ -33,7 +34,7 @@ type Country = {
 };
 
 type FormData = {
-  name: string;
+  fullName: string;
   email: string;
   phone: string;
   moveInDate?: string;
@@ -51,8 +52,10 @@ const LiveAbroadPage = () => {
   const [showForm, setShowForm] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [modalImageIndex, setModalImageIndex] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
-    name: '',
+    fullName: '',
     email: '',
     phone: '',
     moveInDate: '',
@@ -159,14 +162,14 @@ const LiveAbroadPage = () => {
 
   const filteredProperties = properties
     .filter(property => property.type === activeTab)
-    .filter(property => 
-      property.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    .filter(property =>
+      property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       property.location.toLowerCase().includes(searchQuery.toLowerCase())
     )
-    .filter(property => 
+    .filter(property =>
       selectedCountry ? property.location.includes(selectedCountry) : true
     )
-    .filter(property => 
+    .filter(property =>
       property.price >= priceRange[0] && property.price <= priceRange[1]
     );
 
@@ -189,18 +192,24 @@ const LiveAbroadPage = () => {
     }));
   };
 
-  const handleSubmitForm = (e: React.FormEvent) => {
+  const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would typically send the form data to your backend
-    alert(`Thank you for your interest, ${formData.name}! We will contact you shortly about ${selectedProperty?.title}.`);
-    setShowForm(false);
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      moveInDate: '',
-      message: ''
-    });
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await createUserQuery(formData);
+      alert(`Thank you for your interest, ${formData.fullName}! We will contact you shortly about ${selectedProperty?.title}.`);
+      setShowForm(false);
+      setSuccess('Your message has been submitted successfully.');
+      setSelectedProperty(null);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An error occurred while submitting the form.');
+      }
+    }
   };
 
   const openImageModal = (index: number) => {
@@ -214,13 +223,13 @@ const LiveAbroadPage = () => {
 
   const navigateImage = (direction: 'prev' | 'next') => {
     if (!selectedProperty) return;
-    
+
     if (direction === 'prev') {
-      setModalImageIndex(prev => 
+      setModalImageIndex(prev =>
         prev === 0 ? selectedProperty.images.length - 1 : prev - 1
       );
     } else {
-      setModalImageIndex(prev => 
+      setModalImageIndex(prev =>
         prev === selectedProperty.images.length - 1 ? 0 : prev + 1
       );
     }
@@ -237,39 +246,39 @@ const LiveAbroadPage = () => {
         {/* Image Modal */}
         {showImageModal && selectedProperty && (
           <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
-            <button 
+            <button
               onClick={closeImageModal}
               className="absolute top-4 right-4 text-white text-2xl"
               aria-label="Close image modal"
             >
               <FiX size={28} />
             </button>
-            
+
             <div className="relative w-full max-w-6xl h-full max-h-screen">
-              <Image 
+              <Image
                 src={selectedProperty.images[modalImageIndex]}
                 alt={`${selectedProperty.title} - Image ${modalImageIndex + 1}`}
                 fill
                 className="object-contain"
                 priority
               />
-              
-              <button 
+
+              <button
                 onClick={() => navigateImage('prev')}
                 className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70"
                 aria-label="Previous image"
               >
                 <FiArrowLeft size={24} />
               </button>
-              
-              <button 
+
+              <button
                 onClick={() => navigateImage('next')}
                 className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70"
                 aria-label="Next image"
               >
                 <FiArrowLeft size={24} className="transform rotate-180" />
               </button>
-              
+
               <div className="absolute bottom-4 left-0 right-0 text-center text-white">
                 Image {modalImageIndex + 1} of {selectedProperty.images.length}
               </div>
@@ -280,7 +289,7 @@ const LiveAbroadPage = () => {
         {/* Property Details Header */}
         <div className="bg-[#23371c] text-white py-6">
           <div className="container mx-auto px-4">
-            <button 
+            <button
               onClick={handleBackToList}
               className="flex items-center text-white hover:text-gray-200 mb-4"
             >
@@ -301,12 +310,12 @@ const LiveAbroadPage = () => {
             <>
               {/* Image Gallery */}
               <div className="mb-8">
-                <div 
+                <div
                   className="relative h-96 bg-gray-200 rounded-lg overflow-hidden mb-4 cursor-zoom-in"
                   onClick={() => openImageModal(activeImageIndex)}
                 >
-                  <Image 
-                    src={selectedProperty.images[activeImageIndex]} 
+                  <Image
+                    src={selectedProperty.images[activeImageIndex]}
                     alt={selectedProperty.title}
                     fill
                     className="object-cover"
@@ -321,8 +330,8 @@ const LiveAbroadPage = () => {
                       className={`relative h-20 bg-gray-200 rounded overflow-hidden ${activeImageIndex === index ? 'ring-2 ring-[#23371c]' : ''}`}
                       aria-label={`View image ${index + 1}`}
                     >
-                      <Image 
-                        src={image} 
+                      <Image
+                        src={image}
                         alt={`${selectedProperty.title} - thumbnail ${index + 1}`}
                         fill
                         className="object-cover"
@@ -342,7 +351,7 @@ const LiveAbroadPage = () => {
                         {selectedProperty.type === 'rent' ? `$${selectedProperty.price}/mo` : `$${selectedProperty.price.toLocaleString()}`}
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-3 gap-4 mb-6">
                       <div className="bg-[#EBEBE1] p-3 rounded-lg text-center">
                         <div className="text-gray-500 text-sm">Bedrooms</div>
@@ -387,9 +396,9 @@ const LiveAbroadPage = () => {
                     <div className="mt-6 pt-6 border-t border-gray-200">
                       <h4 className="font-bold mb-2">Property Location</h4>
                       <div className="h-48 bg-gray-200 rounded-lg mb-4">
-                        <MapWithNoSSR 
-                          center={selectedProperty.coordinates} 
-                          zoom={13} 
+                        <MapWithNoSSR
+                          center={selectedProperty.coordinates}
+                          zoom={13}
                           propertyLocation={selectedProperty.coordinates}
                           propertyTitle={selectedProperty.title}
                         />
@@ -406,7 +415,7 @@ const LiveAbroadPage = () => {
               <h2 className="text-2xl font-bold mb-6">
                 {selectedProperty.type === 'rent' ? 'Rental Application' : 'Purchase Inquiry'}
               </h2>
-              
+
               <form onSubmit={handleSubmitForm}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                   <div>
@@ -417,17 +426,17 @@ const LiveAbroadPage = () => {
                       </div>
                       <input
                         type="text"
-                        id="name"
-                        name="name"
+                        id="fullName"
+                        name="fullName"
                         required
-                        value={formData.name}
+                        value={formData.fullName}
                         onChange={handleFormChange}
                         className="pl-10 block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-[#4D812C] focus:border-[#23371c]"
                         placeholder="Your full name"
                       />
                     </div>
                   </div>
-                  
+
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                     <div className="relative">
@@ -446,7 +455,7 @@ const LiveAbroadPage = () => {
                       />
                     </div>
                   </div>
-                  
+
                   <div>
                     <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                     <div className="relative">
@@ -465,7 +474,7 @@ const LiveAbroadPage = () => {
                       />
                     </div>
                   </div>
-                  
+
                   {selectedProperty.type === 'rent' && (
                     <div>
                       <label htmlFor="moveInDate" className="block text-sm font-medium text-gray-700 mb-1">Move-in Date</label>
@@ -485,7 +494,7 @@ const LiveAbroadPage = () => {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="mb-6">
                   <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
                     {selectedProperty.type === 'rent' ? 'Why are you interested in renting this property?' : 'Tell us about your purchase timeline'}
@@ -501,7 +510,7 @@ const LiveAbroadPage = () => {
                     placeholder="Enter your message here..."
                   ></textarea>
                 </div>
-                
+
                 <div className="flex justify-end space-x-4">
                   <button
                     type="button"
@@ -516,6 +525,8 @@ const LiveAbroadPage = () => {
                   >
                     Submit Application
                   </button>
+                  {success && <p className="text-green-600">{success}</p>}
+                  {error && <p className="text-red-600">{error}</p>}
                 </div>
               </form>
             </div>
@@ -539,7 +550,7 @@ const LiveAbroadPage = () => {
           <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
             Discover properties for rent or sale in countries with strong Tunisian communities
           </p>
-          
+
           {/* Tab Navigation */}
           <div className="flex justify-center mb-8">
             <div className="inline-flex rounded-md shadow-sm">
@@ -581,7 +592,7 @@ const LiveAbroadPage = () => {
                 aria-label="Search properties"
               />
             </div>
-            <button 
+            <button
               onClick={() => setShowFilters(!showFilters)}
               className="flex items-center justify-center px-6 py-3 border border-[#23371c] text-[#23371c] rounded-lg hover:bg-[#EBEBE1] transition-colors"
               aria-label={showFilters ? "Hide filters" : "Show filters"}
@@ -597,7 +608,7 @@ const LiveAbroadPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label htmlFor="country-select" className="block text-sm font-medium text-gray-700 mb-2">Country</label>
-                  <select 
+                  <select
                     id="country-select"
                     className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#23371c] focus:border-transparent rounded-lg"
                     value={selectedCountry || ''}
@@ -640,7 +651,7 @@ const LiveAbroadPage = () => {
                   </div>
                 </div>
                 <div className="flex items-end">
-                  <button 
+                  <button
                     className="w-full bg-[#23371c] text-white py-2 px-4 rounded-lg hover:bg-[#4D812C] transition-colors"
                     aria-label="Apply filters"
                   >
@@ -665,10 +676,10 @@ const LiveAbroadPage = () => {
               aria-label={`View properties in ${country.name}`}
             >
               <div className="text-4xl mb-2">
-                {country.code === 'fr' ? '🇫🇷' : 
-                 country.code === 'de' ? '🇩🇪' : 
-                 country.code === 'ca' ? '🇨🇦' : 
-                 country.code === 'us' ? '🇺🇸' : '🇦🇪'}
+                {country.code === 'fr' ? '🇫🇷' :
+                  country.code === 'de' ? '🇩🇪' :
+                    country.code === 'ca' ? '🇨🇦' :
+                      country.code === 'us' ? '🇺🇸' : '🇦🇪'}
               </div>
               <h3 className="font-medium">{country.name}</h3>
               <p className="text-sm text-gray-500">{country.propertyCount} properties</p>
@@ -696,8 +707,8 @@ const LiveAbroadPage = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredProperties.map(property => (
-              <div 
-                key={property.id} 
+              <div
+                key={property.id}
                 className={`border rounded-lg overflow-hidden hover:shadow-lg transition-shadow ${property.featured ? 'border-[#4D812C]' : 'border-gray-200'}`}
                 onClick={() => handlePropertyClick(property)}
                 style={{ cursor: 'pointer' }}
@@ -709,13 +720,13 @@ const LiveAbroadPage = () => {
                   </div>
                 )}
                 <div className="h-48 bg-gray-200 relative">
-                  <Image 
-                    src={property.images[0]} 
+                  <Image
+                    src={property.images[0]}
                     alt={property.title}
                     fill
                     className="object-cover"
                   />
-                  <button 
+                  <button
                     className="absolute top-2 right-2 p-2 bg-white rounded-full shadow"
                     onClick={(e) => {
                       e.stopPropagation();

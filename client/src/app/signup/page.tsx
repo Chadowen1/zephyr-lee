@@ -13,8 +13,6 @@ type FormData = {
   ConfirmPassword: string;
 };
 
-
-
 export default function SignUp() {
   const [formData, setFormData] = useState<FormData>({
     Nom: '',

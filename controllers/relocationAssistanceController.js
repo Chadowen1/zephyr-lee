@@ -3,20 +3,27 @@ const db = require('../models');
 // Create a new RelocationAssistance entry (POST)
 exports.createRelocationAssistance = async (req, res) => {
   try {
-    const { country, city, services_offered, contact_info, user_id } = req.body;
-    const relocationAssistance = await db.RelocationAssistance.create({
-      country,
-      city,
+    const { services_offered, email } = req.body;
+
+    const user = await db.Utilisateur.findOne({ where: { email } });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const relocation = await db.RelocationAssistance.create({
       services_offered,
-      contact_info,
-      user_id,
+      user_id: user.id,
+      contact_info: email,
+      createdAt: new Date(),
+      updatedAt: new Date()
     });
-    res.status(201).json(relocationAssistance);
+
+    res.status(201).json(relocation);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
-
 
 // Get all RelocationAssistance entries
 exports.getAllRelocationAssistance = async (req, res) => {
@@ -64,23 +71,23 @@ exports.updateRelocationAssistance = async (req, res) => {
 
 // Partially update a RelocationAssistance entry by ID (PATCH)
 exports.patchRelocationAssistance = async (req, res) => {
-    try {
-      const { id } = req.params;
-      const updates = req.body;
-  
-      const [updated] = await db.RelocationAssistance.update(updates, {
-        where: { id },
-      });
-  
-      if (updated) {
-        const updatedRelocationAssistance = await db.RelocationAssistance.findByPk(id);
-        res.status(200).json(updatedRelocationAssistance);
-      } else {
-        res.status(404).json({ error: 'RelocationAssistance not found' });
-      }
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    const [updated] = await db.RelocationAssistance.update(updates, {
+      where: { id },
+    });
+
+    if (updated) {
+      const updatedRelocationAssistance = await db.RelocationAssistance.findByPk(id);
+      res.status(200).json(updatedRelocationAssistance);
+    } else {
+      res.status(404).json({ error: 'RelocationAssistance not found' });
     }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 
 

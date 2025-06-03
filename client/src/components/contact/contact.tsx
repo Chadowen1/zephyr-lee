@@ -1,13 +1,44 @@
 import Head from 'next/head';
+import { createRelocationAssistance } from '@/services/relocationAssistanceService';
+import { useState } from 'react';
+
+type FormData = {
+  services_offered: string;
+  email: string;
+};
 
 export default function ContactPage() {
+  const [formData, setFormData] = useState<FormData>({
+    email: '',
+    services_offered: '',
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await createRelocationAssistance(formData.services_offered, formData.email);
+      setFormData({ email: '', services_offered: '' });
+      setSuccess('Your message has been submitted successfully.');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An error occurred while submitting the form.');
+      }
+    }
+  };
+
   return (
     <>
       <Head>
         <title>Contact Us | Tunisian Diaspora Real Estate Platform</title>
         <meta name="description" content="Get in touch with our team for real estate investments in Tunisia or rental housing abroad" />
       </Head>
-
       <main className="min-h-screen bg-white text-black">
         {/* Hero Section */}
         <section className="relative py-16 md:py-24 bg-[#EBEBE1]">
@@ -20,7 +51,6 @@ export default function ContactPage() {
             </div>
           </div>
         </section>
-
         {/* Contact Content */}
         <section className="py-16 md:py-20">
           <div className="container mx-auto px-4">
@@ -29,8 +59,7 @@ export default function ContactPage() {
               <div className="lg:w-1/2">
                 <div className="bg-white p-8 rounded-lg shadow-lg border border-gray-200">
                   <h2 className="text-2xl font-bold mb-6 text-[#23371c]">Send us a message</h2>
-                  
-                  <form className="space-y-6">
+                  <form className="space-y-6" onSubmit={handleSubmit}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label htmlFor="first-name" className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
@@ -51,7 +80,6 @@ export default function ContactPage() {
                         />
                       </div>
                     </div>
-
                     <div>
                       <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
                       <input
@@ -59,12 +87,15 @@ export default function ContactPage() {
                         id="email"
                         className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4D812C] focus:border-transparent"
                         placeholder="your.email@example.com"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       />
                     </div>
-
                     <div>
                       <label htmlFor="service" className="block text-sm font-medium text-gray-700 mb-1">Service Needed</label>
                       <select
+                        value={formData.services_offered}
+                        onChange={(e) => setFormData({ ...formData, services_offered: e.target.value })}
                         id="service"
                         className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4D812C] focus:border-transparent"
                       >
@@ -75,7 +106,6 @@ export default function ContactPage() {
                         <option value="other">Other Inquiry</option>
                       </select>
                     </div>
-
                     <div>
                       <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">Your Message</label>
                       <textarea
@@ -85,23 +115,22 @@ export default function ContactPage() {
                         placeholder="How can we help you?"
                       ></textarea>
                     </div>
-
                     <button
                       type="submit"
                       className="w-full bg-[#4D812C] hover:bg-[#23371c] text-white font-medium py-3 px-6 rounded-md transition duration-300"
                     >
                       Send Message
                     </button>
+                    {success && <p className="text-green-600">{success}</p>}
+                    {error && <p className="text-red-600">{error}</p>}
                   </form>
                 </div>
               </div>
-
               {/* Contact Info */}
               <div className="lg:w-1/2">
                 <div className="space-y-8">
                   <div>
                     <h2 className="text-2xl font-bold mb-6 text-[#23371c]">Our Offices</h2>
-                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
                       <div className="bg-[#EBEBE1] p-6 rounded-lg">
                         <h3 className="text-lg font-semibold mb-3 text-[#23371c]">Tunisia Headquarters</h3>
@@ -111,10 +140,8 @@ export default function ContactPage() {
                       </div>
                     </div>
                   </div>
-
                   <div>
                     <h2 className="text-2xl font-bold mb-6 text-[#23371c]">How We Can Help</h2>
-                    
                     <div className="space-y-4">
                       <div className="flex items-start">
                         <div className="flex-shrink-0 mt-1">
@@ -128,7 +155,6 @@ export default function ContactPage() {
                           <p className="text-gray-700">Assistance with property search and investment in Tunisia</p>
                         </div>
                       </div>
-                      
                       <div className="flex items-start">
                         <div className="flex-shrink-0 mt-1">
                           <div className="w-6 h-6 rounded-full bg-[#4D812C] flex items-center justify-center">
@@ -141,7 +167,6 @@ export default function ContactPage() {
                           <p className="text-gray-700">Support finding rental housing in your destination country</p>
                         </div>
                       </div>
-                      
                       <div className="flex items-start">
                         <div className="flex-shrink-0 mt-1">
                           <div className="w-6 h-6 rounded-full bg-[#4D812C] flex items-center justify-center">
@@ -154,7 +179,6 @@ export default function ContactPage() {
                           <p className="text-gray-700">Connections with Tunisian communities abroad</p>
                         </div>
                       </div>
-                      
                       <div className="flex items-start">
                         <div className="flex-shrink-0 mt-1">
                           <div className="w-6 h-6 rounded-full bg-[#4D812C] flex items-center justify-center">
@@ -169,13 +193,11 @@ export default function ContactPage() {
                       </div>
                     </div>
                   </div>
-
                 </div>
               </div>
             </div>
           </div>
         </section>
-
       </main>
     </>
   );

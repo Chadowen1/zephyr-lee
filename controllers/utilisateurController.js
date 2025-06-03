@@ -92,7 +92,7 @@ exports.updateUtilisateur = async (req, res) => {
 
     if (updated) {
       const updatedUtilisateur = await db.Utilisateur.findByPk(req.params.id, {
-        attributes: { exclude: ['MotDePasse'] }, // Exclude password from the response
+        attributes: { exclude: ['MotDePasse'] },
       });
       res.status(200).json(updatedUtilisateur);
     } else {

@@ -3,19 +3,30 @@ const db = require('../models');
 // Create a new UserQuery entry
 exports.createUserQuery = async (req, res) => {
   try {
-    const { category, question, user_id } = req.body;
+    const { fullName, email, phone, message, moveInDate, financing } = req.body;
+
+    console.log("Looking up user with email:", email);
+
+    // Ensure correct model name
+    const user = await db.Utilisateur.findOne({ where: { email } });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found with this email.' });
+    }
+
     const userQuery = await db.UserQueries.create({
-      category,
-      question,
-      user_id,
-      status: 'pending', // Default status
+      category: 'general',
+      question: message,
+      user_id: user.id,
+      status: 'pending',
     });
+
     res.status(201).json(userQuery);
   } catch (error) {
+    console.error('Error in createUserQuery:', error);
     res.status(500).json({ error: error.message });
   }
 };
-
 
 // Get all UserQueries
 exports.getAllUserQueries = async (req, res) => {
@@ -63,23 +74,23 @@ exports.updateUserQuery = async (req, res) => {
 
 // Partially update a UserQuery by ID (PATCH)
 exports.patchUserQuery = async (req, res) => {
-    try {
-      const { id } = req.params;
-      const updates = req.body;
-  
-      const [updated] = await db.UserQueries.update(updates, {
-        where: { id },
-      });
-  
-      if (updated) {
-        const updatedUserQuery = await db.UserQueries.findByPk(id);
-        res.status(200).json(updatedUserQuery);
-      } else {
-        res.status(404).json({ error: 'UserQuery not found' });
-      }
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    const [updated] = await db.UserQueries.update(updates, {
+      where: { id },
+    });
+
+    if (updated) {
+      const updatedUserQuery = await db.UserQueries.findByPk(id);
+      res.status(200).json(updatedUserQuery);
+    } else {
+      res.status(404).json({ error: 'UserQuery not found' });
     }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 
 

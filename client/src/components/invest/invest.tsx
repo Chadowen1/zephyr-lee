@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FiSearch, FiHome, FiMapPin, FiDollarSign, FiFilter, FiHeart, FiArrowLeft, FiX } from 'react-icons/fi';
+import { createUserQuery } from '@/services/userQueriesService';
 
-// Sample images - in a real app, you would import actual image files
 const propertyImages = {
   villa: {
     main: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80',
@@ -77,7 +77,8 @@ export default function InvestInTunisia() {
     financing: ''
   });
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterOptions>({
     propertyType: '',
     location: '',
@@ -219,13 +220,24 @@ export default function InvestInTunisia() {
     }));
   };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would typically send the form data to your backend
-    console.log('Form submitted:', formData);
-    alert(`Thank you for your interest! We'll contact you soon about ${selectedProperty?.title}`);
-    setShowForm(false);
-    setSelectedProperty(null);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await createUserQuery(formData);
+      alert(`Thank you for your interest! We'll contact you soon about ${selectedProperty?.title}`);
+      setShowForm(false);
+      setSuccess('Your message has been submitted successfully.');
+      setSelectedProperty(null);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An error occurred while submitting the form.');
+      }
+    }
   };
 
   const handleStartProcess = () => {
@@ -277,35 +289,35 @@ export default function InvestInTunisia() {
     return (
       <div className="min-h-screen bg-white text-black">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <button 
+          <button
             onClick={handleBackToList}
             className="flex items-center text-[#4D812C] mb-6 hover:text-[#23371c]"
           >
             <FiArrowLeft className="mr-2" /> Back to properties
           </button>
-          
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Property Images */}
             <div>
-              <div 
+              <div
                 className="h-96 rounded-lg mb-4 overflow-hidden cursor-zoom-in"
                 onClick={() => openImageModal(selectedProperty.images[0])}
               >
-                <img 
-                  src={selectedProperty.images[0]} 
+                <img
+                  src={selectedProperty.images[0]}
                   alt={selectedProperty.title}
                   className="w-full h-full object-cover"
                 />
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {selectedProperty.images.slice(1).map((img, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className="h-24 rounded overflow-hidden cursor-zoom-in"
                     onClick={() => openImageModal(img)}
                   >
-                    <img 
-                      src={img} 
+                    <img
+                      src={img}
                       alt={`${selectedProperty.title} - ${index + 1}`}
                       className="w-full h-full object-cover"
                     />
@@ -313,7 +325,7 @@ export default function InvestInTunisia() {
                 ))}
               </div>
             </div>
-            
+
             {/* Property Details */}
             <div>
               <h1 className="text-3xl font-bold mb-2">{selectedProperty.title}</h1>
@@ -321,19 +333,19 @@ export default function InvestInTunisia() {
                 <FiMapPin className="mr-1" />
                 <span>{selectedProperty.location}</span>
               </div>
-              
+
               <div className="bg-[#EBEBE1] p-4 rounded-lg mb-6">
                 <div className="flex justify-between items-center mb-4">
                   <div className="text-2xl font-bold text-[#23371c]">
-                    {selectedProperty.type === 'sale' 
-                      ? `$${selectedProperty.price.toLocaleString()}` 
+                    {selectedProperty.type === 'sale'
+                      ? `$${selectedProperty.price.toLocaleString()}`
                       : `$${selectedProperty.price}/mo`}
                   </div>
                   <span className="bg-[#4D812C] text-white text-sm px-3 py-1 rounded">
                     {selectedProperty.type === 'sale' ? 'For Sale' : 'For Rent'}
                   </span>
                 </div>
-                
+
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
                     <div className="text-sm text-gray-600">Bedrooms</div>
@@ -349,10 +361,10 @@ export default function InvestInTunisia() {
                   </div>
                 </div>
               </div>
-              
+
               <h2 className="text-xl font-semibold mb-2">Description</h2>
               <p className="text-gray-700 mb-6">{selectedProperty.description}</p>
-              
+
               <h2 className="text-xl font-semibold mb-2">Amenities</h2>
               <div className="grid grid-cols-2 gap-2 mb-8">
                 {selectedProperty.amenities.map((amenity, index) => (
@@ -362,7 +374,7 @@ export default function InvestInTunisia() {
                   </div>
                 ))}
               </div>
-              
+
               <button
                 onClick={handleStartProcess}
                 className="w-full py-3 bg-[#4D812C] text-white font-medium rounded-lg hover:bg-[#23371c] transition-colors"
@@ -382,20 +394,20 @@ export default function InvestInTunisia() {
     return (
       <div className="min-h-screen bg-white text-black">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <button 
+          <button
             onClick={() => setShowForm(false)}
             className="flex items-center text-[#4D812C] mb-6 hover:text-[#23371c]"
           >
             <FiArrowLeft className="mr-2" /> Back to property
           </button>
-          
+
           <h1 className="text-2xl font-bold mb-2">
-            {selectedProperty.type === 'sale' 
-              ? 'Purchase Application' 
+            {selectedProperty.type === 'sale'
+              ? 'Purchase Application'
               : 'Rental Application'} for {selectedProperty.title}
           </h1>
           <p className="text-gray-600 mb-8">Please fill out the form below and you will be contacted shortly.</p>
-          
+
           <form onSubmit={handleFormSubmit} className="space-y-6">
             <div>
               <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
@@ -411,7 +423,7 @@ export default function InvestInTunisia() {
                 onChange={handleFormChange}
               />
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -427,7 +439,7 @@ export default function InvestInTunisia() {
                   onChange={handleFormChange}
                 />
               </div>
-              
+
               <div>
                 <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
                   Phone Number *
@@ -443,7 +455,7 @@ export default function InvestInTunisia() {
                 />
               </div>
             </div>
-            
+
             {selectedProperty.type === 'rent' && (
               <div>
                 <label htmlFor="moveInDate" className="block text-sm font-medium text-gray-700 mb-1">
@@ -459,7 +471,7 @@ export default function InvestInTunisia() {
                 />
               </div>
             )}
-            
+
             {selectedProperty.type === 'sale' && (
               <div>
                 <label htmlFor="financing" className="block text-sm font-medium text-gray-700 mb-1">
@@ -480,7 +492,7 @@ export default function InvestInTunisia() {
                 </select>
               </div>
             )}
-            
+
             <div>
               <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
                 Additional Information
@@ -495,7 +507,7 @@ export default function InvestInTunisia() {
                 placeholder="Any special requests or questions..."
               />
             </div>
-            
+
             <div className="pt-2">
               <button
                 type="submit"
@@ -503,6 +515,8 @@ export default function InvestInTunisia() {
               >
                 Submit Application
               </button>
+              {success && <p className="text-green-600">{success}</p>}
+              {error && <p className="text-red-600">{error}</p>}
             </div>
           </form>
         </div>
@@ -514,7 +528,7 @@ export default function InvestInTunisia() {
   return (
     <div className="min-h-screen bg-white text-black">
       {/* Hero Section */}
-      <div 
+      <div
         className="relative py-20 px-4 sm:px-6 lg:px-8 bg-cover bg-center bg-gradient-to-b from-black/30 to-black/30"
         style={{ backgroundImage: `url(${propertyImages.hero})` }}
       >
@@ -651,15 +665,15 @@ export default function InvestInTunisia() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProperties.length > 0 ? (
             filteredProperties.map(property => (
-              <div 
-                key={property.id} 
+              <div
+                key={property.id}
                 className="rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-100 cursor-pointer"
                 onClick={() => handlePropertyClick(property)}
               >
                 <div className="relative">
                   <div className="h-48 overflow-hidden">
-                    <img 
-                      src={property.images[0]} 
+                    <img
+                      src={property.images[0]}
                       alt={property.title}
                       className="w-full h-full object-cover"
                     />
@@ -669,7 +683,7 @@ export default function InvestInTunisia() {
                       Featured
                     </div>
                   )}
-                  <button 
+                  <button
                     className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -711,7 +725,7 @@ export default function InvestInTunisia() {
                         <>${property.price}/mo</>
                       )}
                     </div>
-                    <button 
+                    <button
                       className="px-3 py-1 bg-[#4D812C] text-white text-sm rounded hover:bg-[#23371c] transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();

@@ -15,11 +15,11 @@ module.exports = (sequelize, DataTypes) => {
     {
       country: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       city: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       services_offered: {
         type: DataTypes.TEXT,
@@ -27,7 +27,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       contact_info: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       user_id: {
         type: DataTypes.INTEGER,

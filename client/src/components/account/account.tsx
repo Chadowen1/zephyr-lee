@@ -99,6 +99,11 @@ const AccountPage = ({ userData, setUserData }: AccountPageProps) => {
       if (!response.success) {
         throw new Error(response.data.message || "Failed to update user.");
       }
+
+      const updatedUser = response.data;
+
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+
       setSuccess("User updated successfully!");
     } catch (error: unknown) {
       let errorMessage = "Update failed. Please try again.";
@@ -132,46 +137,46 @@ const AccountPage = ({ userData, setUserData }: AccountPageProps) => {
     }
   };
 
-const handlePropertySubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+  const handlePropertySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  try {
-    if (editingPropertyId) {
-      const updated = await updateProperty(editingPropertyId, propertyForm);
-      const updatedProperties = properties.map(prop =>
-        prop.id === updated.id ? updated : prop
-      );
-      setProperties(updatedProperties);
-    } else {
-      const storedUser = localStorage.getItem("user");
-      if (!storedUser) throw new Error("No user in localStorage");
+    try {
+      if (editingPropertyId) {
+        const updated = await updateProperty(editingPropertyId, propertyForm);
+        const updatedProperties = properties.map(prop =>
+          prop.id === updated.id ? updated : prop
+        );
+        setProperties(updatedProperties);
+      } else {
+        const storedUser = localStorage.getItem("user");
+        if (!storedUser) throw new Error("No user in localStorage");
 
-      const { id: userId } = JSON.parse(storedUser);
+        const { id: userId } = JSON.parse(storedUser);
 
-      const newPropertyData = {
-        ...propertyForm,
-        ProprietarieID: userId
-      };
+        const newPropertyData = {
+          ...propertyForm,
+          ProprietarieID: userId
+        };
 
-      const created = await addProperty(newPropertyData);
-      setProperties([...properties, created]);
+        const created = await addProperty(newPropertyData);
+        setProperties([...properties, created]);
+      }
+
+      setPropertyForm({
+        Titre: "",
+        Description: "",
+        Type: "Apartment",
+        Prix: "",
+        Localisation: "",
+        images: [],
+      });
+
+      setEditingPropertyId(null);
+      setActiveTab("properties");
+    } catch (error) {
+      console.error("Failed to submit property:", error);
     }
-
-    setPropertyForm({
-      Titre: "",
-      Description: "",
-      Type: "Apartment",
-      Prix: "",
-      Localisation: "",
-      images: [],
-    });
-
-    setEditingPropertyId(null);
-    setActiveTab("properties");
-  } catch (error) {
-    console.error("Failed to submit property:", error);
-  }
-};
+  };
 
   const handleEditProperty = (id: string) => {
     const propertyToEdit = properties.find(prop => prop.id === id);
